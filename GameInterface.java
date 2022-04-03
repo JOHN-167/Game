@@ -5,16 +5,20 @@ import javax.swing.Timer;
 import java.util.*;
 import java.util.List;
 public class GameInterface extends JFrame {
+    Random rnd = new Random();
+    Timer collarTimer;
     int space = 200;
     int frameHeight;
-    Random rnd = new Random();
     int startX = 0;
     int birdX = 200;
     int birdRad = 15;
+    int score = 0;
     List<TopCollar> collars = new LinkedList<>();
-    final int ogCounter = 800;
-    final int SPACE = 6;
-    int counter = ogCounter;
+    Color birdColor = Color.YELLOW;
+    Color scoreColor = Color.BLACK;
+    Color collarColor = Color.WHITE;
+    Color canvasColor = Color.PINK;
+    boolean gameOver = false;
     public GameInterface (int frameHeight) {
         this.frameHeight = frameHeight;
         setSize(1000,frameHeight);
@@ -25,7 +29,7 @@ public class GameInterface extends JFrame {
         Bird bird = new Bird(birdX,birdRad);
         class Canvas extends JPanel implements KeyListener {    
             public Canvas () {
-                setBackground(Color.BLUE);
+                setBackground(canvasColor);
             }
             @Override
             public void paintComponent (Graphics g) {
@@ -37,12 +41,13 @@ public class GameInterface extends JFrame {
                     bCollar.paintComponent(g);
                 }
                 bird.paintComponent(g);
+                g.setColor(scoreColor);
+                g.drawString((gameOver == true)? "Game Over" : "Score = " + score, getWidth()/2-50, getHeight()-40);
             }
             @Override
             public void keyPressed (KeyEvent e) {
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_SPACE:
-                        counter = ogCounter;
                         bird.flyUp();
                         break;
                 }
@@ -52,11 +57,12 @@ public class GameInterface extends JFrame {
             @Override
             public void keyTyped (KeyEvent e) {}
         }
+        JPanel startPanel = new JPanel();
         JButton startButton = new JButton("Begin");
         startButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent e) {
-                remove((JButton) e.getSource());
+                remove(startPanel);
                 for (int i = 0; i < 11; i++) 
                     collars.add(new TopCollar(i*(50+space)+500,rnd.nextInt(frameHeight*4/6)));
                 
@@ -64,17 +70,28 @@ public class GameInterface extends JFrame {
                 canvas.setVisible(true);
                 addKeyListener(canvas);
                 add(canvas);
-                Timer birdTimer = new Timer (counter/(ogCounter/SPACE), new ActionListener () {
+                Timer scoreTimer = new Timer (1000, new ActionListener() {
+                    @Override
+                    public void actionPerformed (ActionEvent e) {
+                        GameInterface.this.dispose();
+                        System.exit(0);
+                    }
+                });
+                Timer birdTimer = new Timer (6, new ActionListener () {
                     @Override
                     public void actionPerformed (ActionEvent e) {
                         bird.gravity();
                         canvas.revalidate();
                         canvas.repaint();
-                        counter -= 3;
-                        System.out.println("timer = " + ((Timer)(e.getSource())).getDelay());
+                        if (bird.getY()+(double)birdRad*4.5 > frameHeight) {
+                            ((Timer)e.getSource()).stop();
+                            collarTimer.stop();
+                            scoreTimer.start();
+                            gameOver = true;
+                        }
                     }
                 });
-                Timer collarTimer = new Timer (15, new ActionListener () {
+                collarTimer = new Timer (15, new ActionListener () {
                     @Override
                     public void actionPerformed (ActionEvent e) {
                         int birdY = bird.getY();
@@ -84,22 +101,24 @@ public class GameInterface extends JFrame {
                                             birdX < collar.getX()+50;
                             boolean testY = birdY < collar.getHeight() || 
                                     birdY+30 > collar.getHeight()+frameHeight/6;
-                            // if (testX && testY){
-                            //     ((Timer)e.getSource()).stop();
-                            //     birdTimer.stop();
-                            // }
+                            if (testX && testY){
+                                ((Timer)e.getSource()).stop();
+                                birdTimer.stop();
+                                gameOver = true;
+                                scoreTimer.start();
+                            }
                         }
                         canvas.revalidate();
                         canvas.repaint();
                     }
                 });
                 collarTimer.start();
-                birdTimer.setDelay(counter/(ogCounter/SPACE));
                 birdTimer.start();
 
             }
         });
-        add(startButton);
+        startPanel.add(startButton);
+        add(startPanel);
         
     }
     public static void main (String[] args) {
@@ -115,15 +134,17 @@ public class GameInterface extends JFrame {
         @Override
         public void paintComponent (Graphics g) {
             super.paintComponent(g);
-            g.setColor(Color.GREEN);
+            g.setColor(collarColor);
             g.fillRect(X, 0, 50, height);
         }
         public void step () {
             X -= 1;
             if (X < -50) {
                 X = 11*(space+50);
-                height = rnd.nextInt(frameHeight*4/6);
+                height = rnd.nextInt(frameHeight*3/6)+frameHeight/6;
             }
+            if (X+50 == birdX)
+                score++;
             repaint();
         }
         public int getHeight() {
@@ -142,12 +163,13 @@ public class GameInterface extends JFrame {
         @Override
         public void paintComponent (Graphics g) {
             super.paintComponent(g);
-            g.setColor(Color.GREEN);
+            g.setColor(collarColor);
             g.fillRect(X, 600-height, 50, 600);
         }
     }
     class Bird extends JComponent {
-        int X,Y,rad;
+        int X,rad;
+        double Y;
         public Bird (int X, int rad) {
             this.X = X;
             Y = frameHeight*4/6;
@@ -157,19 +179,23 @@ public class GameInterface extends JFrame {
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
-            g.setColor(Color.YELLOW);
-            g.fillOval(X, Y, rad*2, rad*2);
+            g.setColor(birdColor);
+            g.fillOval(X, (int) Y, rad*2, rad*2);
         }
         public void gravity () {
-            Y += 1;
+            Y += 1.5;
             repaint();
         }
         public void flyUp () {
+            if (Y > 40)
             Y -= 40;
             repaint();
         }
         public int getY() {
-            return Y;
+            return (int) Y;
+        }
+        public int getHeight() {
+            return rad*2;
         }
     }
 }
