@@ -4,12 +4,11 @@ import javax.swing.*;
 import javax.swing.Timer;
 import java.util.*;
 import java.util.List;
-public class GameInterface extends JFrame {
+public class GameInterface  extends JFrame {
     Random rnd = new Random();
     Timer collarTimer;
     int space = 200;
     int frameHeight;
-    int startX = 0;
     int birdX = 200;
     int birdRad = 15;
     int score = 0;
@@ -18,7 +17,7 @@ public class GameInterface extends JFrame {
     Color scoreColor = Color.BLACK;
     Color collarColor = Color.WHITE;
     Color canvasColor = Color.PINK;
-    boolean gameOver = false;
+    boolean gameOver = false; 
     public GameInterface (int frameHeight) {
         this.frameHeight = frameHeight;
         setSize(1000,frameHeight);
@@ -172,7 +171,7 @@ public class GameInterface extends JFrame {
         double Y;
         public Bird (int X, int rad) {
             this.X = X;
-            Y = frameHeight*4/6;
+            Y = frameHeight/2;
             // Y = 400; 
             this.rad = rad;
         }
@@ -183,7 +182,7 @@ public class GameInterface extends JFrame {
             g.fillOval(X, (int) Y, rad*2, rad*2);
         }
         public void gravity () {
-            Y += 1.5;
+            Y += 1.3;
             repaint();
         }
         public void flyUp () {
