@@ -12,15 +12,17 @@ public class GameInterface extends JFrame {
     int birdX = 200;
     int birdRad = 15;
     List<TopCollar> collars = new LinkedList<>();
+    final int ogCounter = 800;
+    final int SPACE = 6;
+    int counter = ogCounter;
     public GameInterface (int frameHeight) {
         this.frameHeight = frameHeight;
         setSize(1000,frameHeight);
         setMinimumSize(new Dimension(500,frameHeight));
         setMaximumSize(new Dimension(Integer.MAX_VALUE,frameHeight));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setFocusable(true);
         Bird bird = new Bird(birdX,birdRad);
-        for (int i = 0; i < 11; i++) 
-            collars.add(new TopCollar(i*(50+space)+500,rnd.nextInt(frameHeight*4/6)));
         class Canvas extends JPanel implements KeyListener {    
             public Canvas () {
                 setBackground(Color.BLUE);
@@ -40,6 +42,7 @@ public class GameInterface extends JFrame {
             public void keyPressed (KeyEvent e) {
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_SPACE:
+                        counter = ogCounter;
                         bird.flyUp();
                         break;
                 }
@@ -49,39 +52,55 @@ public class GameInterface extends JFrame {
             @Override
             public void keyTyped (KeyEvent e) {}
         }
-        Canvas canvas = new Canvas();
-        canvas.setVisible(true);
-        addKeyListener(canvas);
-        add(canvas);
-        Timer birdTimer = new Timer (10, new ActionListener () {
+        JButton startButton = new JButton("Begin");
+        startButton.addActionListener(new ActionListener(){
             @Override
-            public void actionPerformed (ActionEvent e) {
-                bird.gravity();
-                canvas.revalidate();
-                canvas.repaint();
-            }
-        });
-        Timer collarTimer = new Timer (15, new ActionListener () {
-            @Override
-            public void actionPerformed (ActionEvent e) {
-                int birdY = bird.getY();
-                for (TopCollar collar : collars){
-                    collar.step();
-                    boolean testX = birdX > collar.getX()-birdRad*2 && 
-                                    birdX < collar.getX()+50;
-                    boolean testY = birdY < collar.getHeight() || 
-                            birdY+30 > collar.getHeight()+frameHeight/6;
-                    if (testX && testY){
-                        ((Timer)e.getSource()).stop();
-                        birdTimer.stop();
+            public void actionPerformed(ActionEvent e) {
+                remove((JButton) e.getSource());
+                for (int i = 0; i < 11; i++) 
+                    collars.add(new TopCollar(i*(50+space)+500,rnd.nextInt(frameHeight*4/6)));
+                
+                Canvas canvas = new Canvas();
+                canvas.setVisible(true);
+                addKeyListener(canvas);
+                add(canvas);
+                Timer birdTimer = new Timer (counter/(ogCounter/SPACE), new ActionListener () {
+                    @Override
+                    public void actionPerformed (ActionEvent e) {
+                        bird.gravity();
+                        canvas.revalidate();
+                        canvas.repaint();
+                        counter -= 3;
+                        System.out.println("timer = " + ((Timer)(e.getSource())).getDelay());
                     }
-                }
-                canvas.revalidate();
-                canvas.repaint();
+                });
+                Timer collarTimer = new Timer (15, new ActionListener () {
+                    @Override
+                    public void actionPerformed (ActionEvent e) {
+                        int birdY = bird.getY();
+                        for (TopCollar collar : collars){
+                            collar.step();
+                            boolean testX = birdX > collar.getX()-birdRad*2 && 
+                                            birdX < collar.getX()+50;
+                            boolean testY = birdY < collar.getHeight() || 
+                                    birdY+30 > collar.getHeight()+frameHeight/6;
+                            // if (testX && testY){
+                            //     ((Timer)e.getSource()).stop();
+                            //     birdTimer.stop();
+                            // }
+                        }
+                        canvas.revalidate();
+                        canvas.repaint();
+                    }
+                });
+                collarTimer.start();
+                birdTimer.setDelay(counter/(ogCounter/SPACE));
+                birdTimer.start();
+
             }
         });
-        collarTimer.start();
-        birdTimer.start();
+        add(startButton);
+        
     }
     public static void main (String[] args) {
         GameInterface theFrame = new GameInterface(600);
@@ -132,7 +151,6 @@ public class GameInterface extends JFrame {
         public Bird (int X, int rad) {
             this.X = X;
             Y = frameHeight*4/6;
-            System.out.println(frameHeight+" ");
             // Y = 400; 
             this.rad = rad;
         }
@@ -147,8 +165,7 @@ public class GameInterface extends JFrame {
             repaint();
         }
         public void flyUp () {
-            System.out.println("Flying...");
-            Y -= 30;
+            Y -= 40;
             repaint();
         }
         public int getY() {
